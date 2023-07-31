@@ -1,6 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { MessageType } from '../types/enums';
-import { Message, Player } from '../types/interfaces';
+import { Message } from '../types/interfaces';
 import Service from '../services/Service';
 
 class Controller {
@@ -9,14 +9,15 @@ class Controller {
   constructor(server: WebSocketServer) {
     this.server = server;
   }
-  public handleMessage({ type, data }: Message<unknown>, ws: WebSocket) {
+
+  public handleMessage({ type, data }: Message<string>, ws: WebSocket) {
     switch (type) {
       case MessageType.REGISTER: {
-        const message = Service.register(data as Player);
+        const playerData = Service.register(JSON.parse(data));
         ws.send(
           JSON.stringify({
             type,
-            data: message,
+            data: playerData,
             id: 0,
           })
         );
