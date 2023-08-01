@@ -12,7 +12,6 @@ class Service {
       };
     } catch (error) {
       return {
-        name,
         error: true,
         errorText: (error as Error).message,
       };

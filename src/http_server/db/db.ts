@@ -16,7 +16,7 @@ class Db {
 
     return {
       name,
-      index: this.players.length - 1,
+      index: this.players.findIndex((item) => item.name === name),
     };
   }
 }
