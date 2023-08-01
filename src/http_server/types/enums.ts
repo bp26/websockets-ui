@@ -12,3 +12,8 @@ export const enum MessageType {
   TURN = 'turn',
   FINISH = 'finish',
 }
+
+export const enum ServerMessageMode {
+  SEND = 'send',
+  BROADCAST = 'broadcast',
+}
