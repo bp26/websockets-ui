@@ -5,9 +5,8 @@
   "main": "index.ts",
   "type": "module",
   "scripts": {
-    "start": "tsc && node dist/index.ts",
-    "start:dev": "nodemon ./index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start:prod": "tsc && node dist/index.js",
+    "start:dev": "nodemon ./index.ts"
   },
   "author": "Andrei Auchynnikau",
   "keywords": [],
