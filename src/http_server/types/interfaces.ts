@@ -1,4 +1,10 @@
-import { ServerMessageMode } from './enums';
+import { WebSocket } from 'ws';
+
+import { MessageType, ServerMessageMode } from './enums';
+
+export interface ExtWebSocket extends WebSocket {
+  id: string;
+}
 
 export interface Message<T> {
   type: string;
@@ -8,7 +14,9 @@ export interface Message<T> {
 
 export interface ArrangedData {
   mode: ServerMessageMode;
+  wsId?: string[];
   data: unknown;
+  type: MessageType;
 }
 
 export interface Player {
@@ -16,14 +24,16 @@ export interface Player {
   password: string;
 }
 
-export interface RegisterAnswer {
-  name?: string;
-  index?: number;
-  error: boolean;
-  errorText: string;
+export interface RegisteredPlayer extends Player {
+  id: string;
 }
 
 export interface Room {
-  roomId: number;
-  roomUsers: { name: string; index: number }[];
+  roomId: string;
+  roomUsers: { name: string; index: string }[];
+}
+
+export interface Winner {
+  name: string;
+  wins: number;
 }
