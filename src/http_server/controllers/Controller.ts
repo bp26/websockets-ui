@@ -1,6 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { MessageType } from '../types/enums';
-import { Message } from '../types/interfaces';
+import { MessageType, ServerMessageMode } from '../types/enums';
+import { ArrangedData, Message } from '../types/interfaces';
 import Service from '../services/Service';
 
 class Controller {
@@ -14,8 +14,7 @@ class Controller {
     switch (type) {
       case MessageType.REGISTER: {
         const outgoingData = Service.register(JSON.parse(data));
-        ws.send(this.formatOutgoingMessage(type, outgoingData));
-
+        this.dispatchMessages(ws, type, outgoingData);
         break;
       }
 
@@ -32,9 +31,21 @@ class Controller {
 
   public handleError() {}
 
-  private broadcast(msg: Message<unknown>) {
-    this.server.clients.forEach((client) => {
-      client.send(JSON.stringify(msg));
+  private dispatchMessages(ws: WebSocket, type: string, outgoingData: ArrangedData[]) {
+    outgoingData.forEach((arrangedData) => {
+      switch (arrangedData.mode) {
+        case ServerMessageMode.SEND: {
+          ws.send(this.formatOutgoingMessage(type, arrangedData.data));
+          break;
+        }
+
+        case ServerMessageMode.SEND: {
+          this.server.clients.forEach((client) => {
+            client.send(this.formatOutgoingMessage(type, arrangedData.data));
+          });
+          break;
+        }
+      }
     });
   }
 
