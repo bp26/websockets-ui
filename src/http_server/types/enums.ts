@@ -14,6 +14,7 @@ export const enum MessageType {
 }
 
 export const enum ServerMessageMode {
-  SEND = 'send',
-  BROADCAST = 'broadcast',
+  SEND = 'SEND',
+  BROADCAST = 'BROADCAST',
+  BROADCAST_SELECTIVE = 'BROADCAST_SELECTIVE',
 }
