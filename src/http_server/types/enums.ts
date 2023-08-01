@@ -18,3 +18,16 @@ export const enum ServerMessageMode {
   BROADCAST = 'BROADCAST',
   BROADCAST_SELECTIVE = 'BROADCAST_SELECTIVE',
 }
+
+export const enum AttackResult {
+  MISS = 'miss',
+  KILLED = 'killed',
+  SHOT = 'shot',
+}
+
+export const enum ShipType {
+  HUGE = 'huge',
+  LARGE = 'large',
+  MEDIUM = 'medium',
+  SMALL = 'small',
+}
