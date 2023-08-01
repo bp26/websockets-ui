@@ -1,10 +1,11 @@
-import { Room, Winner, RegisteredPlayer } from '../types/interfaces';
+import { Room, Winner, RegisteredPlayer, Game } from '../types/interfaces';
 import { v4 } from 'uuid';
 
 class Db {
   private players: RegisteredPlayer[] = [];
   private rooms: Room[] = [];
   private winners: Winner[] = [];
+  private games: Game[] = [];
 
   public addPlayer({ name, password, id }: RegisteredPlayer) {
     const player = this.players.find((item) => item.name === name);
@@ -37,6 +38,7 @@ class Db {
       roomUsers: [],
     };
     this.rooms.push(room);
+    return room;
   }
 
   public getRoomById(roomId: string) {
@@ -49,9 +51,12 @@ class Db {
       ...this.rooms[roomIndex],
       ...data,
     };
+    return this.rooms[roomIndex];
   }
 
-  public removeRoom() {}
+  public removeRoom(roomId: string) {
+    this.rooms.filter((room) => room.roomId !== roomId);
+  }
 
   public getWinners() {
     return this.winners;
