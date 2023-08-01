@@ -1,7 +1,14 @@
+import { ServerMessageMode } from './enums';
+
 export interface Message<T> {
   type: string;
   data: T;
   id: 0;
+}
+
+export interface ArrangedData {
+  mode: ServerMessageMode;
+  data: unknown;
 }
 
 export interface Player {
@@ -9,9 +16,14 @@ export interface Player {
   password: string;
 }
 
-export interface PlayerAnswer {
-  name: string;
+export interface RegisterAnswer {
+  name?: string;
   index?: number;
   error: boolean;
   errorText: string;
+}
+
+export interface Room {
+  roomId: number;
+  roomUsers: { name: string; index: number }[];
 }
