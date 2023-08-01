@@ -1,4 +1,4 @@
-import { WebSocketServer, WebSocket } from 'ws';
+import { WebSocketServer } from 'ws';
 import { MessageType, ServerMessageMode } from '../types/enums';
 import { ArrangedData, Message, ExtWebSocket } from '../types/interfaces';
 import Service from '../services/Service';
@@ -15,19 +15,22 @@ class Controller {
   public handleMessage({ type, data }: Message<string>) {
     switch (type) {
       case MessageType.REGISTER: {
-        const outgoingData = Service.register(JSON.parse(data), this.ws.id);
+        const outgoingData = Service.handleRegister(JSON.parse(data), this.ws.id);
         this.dispatchMessages(outgoingData);
         break;
       }
 
       case MessageType.CREATE_ROOM: {
-        const outgoingData = Service.createRoom();
+        const outgoingData = Service.handleCreateRoom(this.ws.id);
         this.dispatchMessages(outgoingData);
         break;
       }
 
-      default:
+      case MessageType.ADD_USER: {
+        const outgoingData = Service.handleAddUser(JSON.parse(data), this.ws.id);
+        this.dispatchMessages(outgoingData);
         break;
+      }
     }
   }
 
