@@ -13,19 +13,16 @@ class Controller {
   public handleMessage({ type, data }: Message<string>, ws: WebSocket) {
     switch (type) {
       case MessageType.REGISTER: {
-        const playerData = Service.register(JSON.parse(data));
-        ws.send(
-          JSON.stringify({
-            type,
-            data: playerData,
-            id: 0,
-          })
-        );
+        const outgoingData = Service.register(JSON.parse(data));
+        ws.send(this.formatOutgoingMessage(type, outgoingData));
+
         break;
       }
 
-      case MessageType.UPDATE_ROOM:
+      case MessageType.UPDATE_ROOM: {
         break;
+      }
+
       default:
         break;
     }
@@ -38,6 +35,14 @@ class Controller {
   private broadcast(msg: Message<unknown>) {
     this.server.clients.forEach((client) => {
       client.send(JSON.stringify(msg));
+    });
+  }
+
+  private formatOutgoingMessage(type: string, outgoingData: unknown) {
+    return JSON.stringify({
+      type,
+      data: JSON.stringify(outgoingData),
+      id: 0,
     });
   }
 }
