@@ -1,6 +1,6 @@
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
-import Controller from './controllers/Controller';
+import Controller from './controllers/controller';
 import { v4 } from 'uuid';
 import { ExtWebSocket } from './types/interfaces';
 

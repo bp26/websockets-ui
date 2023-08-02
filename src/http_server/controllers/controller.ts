@@ -1,7 +1,7 @@
 import { WebSocketServer } from 'ws';
 import { MessageType, ServerMessageMode } from '../types/enums';
 import { ArrangedMessage, Message, ExtWebSocket, DataArray } from '../types/interfaces';
-import Service from '../services/Service';
+import Service from '../services/service';
 
 class Controller {
   private server: WebSocketServer;
