@@ -17,6 +17,7 @@ export const enum ServerMessageMode {
   SEND = 'SEND',
   BROADCAST = 'BROADCAST',
   BROADCAST_SELECTIVE = 'BROADCAST_SELECTIVE',
+  BROADCAST_SELECTIVE_CYCLE_DATA = 'BROADCAST_SELECTIVE_CYCLE_DATA',
 }
 
 export const enum AttackResult {
