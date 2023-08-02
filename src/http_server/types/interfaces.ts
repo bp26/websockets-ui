@@ -12,12 +12,18 @@ export interface Message<T> {
   id: 0;
 }
 
-export interface ArrangedData {
+export interface ArrangedMessage {
   mode: ServerMessageMode;
-  wsId?: string[];
+  wsIds?: string[];
   data: unknown;
   type: MessageType;
 }
+
+export interface DataArray
+  extends Array<{
+    id: string;
+    data: unknown;
+  }> {}
 
 export interface Player {
   name: string;
@@ -29,17 +35,18 @@ export interface RegisteredPlayer extends Player {
 }
 
 export interface RoomIndex {
-  roomId: string;
+  indexRoom: string;
 }
 
-export interface Room extends RoomIndex {
+export interface Room {
+  roomId: string;
   roomUsers: { name: string; index: string }[];
 }
 
 export interface Game {
   gameId: string;
-  playerOne: GamePlayer;
-  playerTwo: GamePlayer;
+  player1: GamePlayer;
+  player2: GamePlayer;
 }
 
 export interface GamePlayer {
