@@ -41,8 +41,8 @@ class Db {
     return room;
   }
 
-  public getRoomById(roomId: string) {
-    return this.rooms.find((item) => item.roomId === roomId);
+  public getRoomById(id: string) {
+    return this.rooms.find((item) => item.roomId === id);
   }
 
   public updateRoom(roomId: string, data: Partial<Room>) {
@@ -56,6 +56,24 @@ class Db {
 
   public removeRoom(roomId: string) {
     this.rooms.filter((room) => room.roomId !== roomId);
+  }
+
+  public addGame(playerId1: string, playerId2: string) {
+    const player1 = {
+      id: playerId1,
+      ships: [],
+    };
+    const player2 = {
+      id: playerId2,
+      ships: [],
+    };
+    const game = {
+      gameId: v4(),
+      player1,
+      player2,
+    };
+    this.games.push(game);
+    return game;
   }
 
   public getWinners() {
