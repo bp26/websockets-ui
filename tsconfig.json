@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2021",
     "lib": ["ES2021", "DOM"],
-    "types": ["node"],
+    "types": ["node", "jest"],
     "module": "ES2020",
     "rootDir": "",
     "outDir": "dist",
