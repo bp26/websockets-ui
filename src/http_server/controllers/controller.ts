@@ -1,7 +1,7 @@
 import { WebSocketServer } from 'ws';
 import { MessageType, ServerMessageMode } from '../types/enums';
 import { ArrangedMessage, Message, ExtWebSocket, DataArray } from '../types/interfaces';
-import Service from '../services/service';
+import service from '../services/service';
 
 class Controller {
   private server: WebSocketServer;
@@ -16,25 +16,25 @@ class Controller {
     try {
       switch (type) {
         case MessageType.REGISTER: {
-          const outgoingData = Service.handleRegister(JSON.parse(data), this.ws.id);
+          const outgoingData = service.handleRegister(JSON.parse(data), this.ws.id);
           this.dispatchMessages(outgoingData);
           break;
         }
 
         case MessageType.CREATE_ROOM: {
-          const outgoingData = Service.handleCreateRoom(this.ws.id);
+          const outgoingData = service.handleCreateRoom(this.ws.id);
           this.dispatchMessages(outgoingData);
           break;
         }
 
         case MessageType.ADD_USER: {
-          const outgoingData = Service.handleAddUser(JSON.parse(data), this.ws.id);
+          const outgoingData = service.handleAddUser(JSON.parse(data), this.ws.id);
           this.dispatchMessages(outgoingData);
           break;
         }
 
         case MessageType.ADD_SHIPS: {
-          const outgoingData = Service.handleAddShips(JSON.parse(data), this.ws.id);
+          const outgoingData = service.handleAddShips(JSON.parse(data), this.ws.id);
           this.dispatchMessages(outgoingData);
           break;
         }
@@ -44,7 +44,9 @@ class Controller {
     }
   }
 
-  public handleClose() {}
+  public handleClose() {
+    service.handleClose(this.ws.id);
+  }
 
   private dispatchMessages(outgoingData: ArrangedMessage[]) {
     outgoingData.forEach(({ mode, type, data, wsIds }) => {

@@ -12,6 +12,11 @@ class PlayerService {
         error: true,
         errorText: 'Wrong password',
       };
+    } else if (oldPlayer.online) {
+      return {
+        error: true,
+        errorText: 'User already online',
+      };
     } else {
       playerDb.update(oldPlayer.id, {
         id: playerId,
@@ -32,6 +37,17 @@ class PlayerService {
     playerDb.update(playerId, {
       gameId,
     });
+  }
+
+  public logoffPlayer(playerId: string) {
+    const player = playerDb.getById(playerId);
+
+    if (player) {
+      playerDb.update(playerId, {
+        online: false,
+        gameId: '',
+      });
+    }
   }
 
   public getPlayer(id: string) {

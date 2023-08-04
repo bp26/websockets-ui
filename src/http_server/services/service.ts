@@ -65,6 +65,10 @@ class Service {
 
     return arrangedMessages;
   }
+
+  public handleClose(playerId: string) {
+    playerService.logoffPlayer(playerId);
+  }
 }
 
 export default new Service();
