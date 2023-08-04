@@ -51,8 +51,3 @@ export interface Ship {
   length: number;
   type: ShipType;
 }
-
-export interface Winner {
-  name: string;
-  wins: number;
-}
