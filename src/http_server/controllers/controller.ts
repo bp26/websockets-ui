@@ -32,6 +32,12 @@ class Controller {
           this.dispatchMessages(outgoingData);
           break;
         }
+
+        case MessageType.ADD_SHIPS: {
+          const outgoingData = Service.handleAddShips(JSON.parse(data), this.ws.id);
+          this.dispatchMessages(outgoingData);
+          break;
+        }
       }
     } catch (error) {
       console.log(error);
