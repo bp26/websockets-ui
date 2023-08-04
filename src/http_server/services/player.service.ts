@@ -3,43 +3,39 @@ import { PlayerData } from '../types/interfaces';
 
 class PlayerService {
   public register({ name, password }: PlayerData, playerId: string) {
-    const oldPlayer = playerDb.getPlayerByName(name);
+    const oldPlayer = playerDb.getByName(name);
 
     if (!oldPlayer) {
-      playerDb.addPlayer({ name, password, id: playerId });
+      playerDb.add(name, password, playerId);
     } else if (oldPlayer.password !== password) {
       return {
         error: true,
         errorText: 'Wrong password',
       };
     } else {
-      playerDb.updatePlayer(oldPlayer.playerId, {
-        playerId,
+      playerDb.update(oldPlayer.id, {
+        id: playerId,
         online: true,
       });
     }
 
-    const player = playerDb.getPlayerById(playerId)!;
+    const player = playerDb.getById(playerId)!;
 
     return {
-      ...{ name: player.name, index: player.playerId },
+      ...{ name: player.name, index: player.id },
       error: false,
       errorText: '',
     };
   }
 
   public addGameIdToPlayer(playerId: string, gameId: string) {
-    playerDb.updatePlayer(playerId, {
+    playerDb.update(playerId, {
       gameId,
     });
   }
 
   public getPlayer(id: string) {
-    return playerDb.getPlayerById(id);
-  }
-
-  public getWinners() {
-    return playerDb.getWinners();
+    return playerDb.getById(id);
   }
 }
 

@@ -3,31 +3,31 @@ import { Player } from '../db/player.db';
 
 class RoomService {
   public getRooms() {
-    return roomDb.getRooms();
+    return roomDb.getAll();
   }
 
   public createRoom(player?: Player) {
-    const { roomId } = roomDb.addRoom();
-    this.addPlayerToRoom(roomId, player);
+    const { id } = roomDb.add();
+    this.addPlayerToRoom(id, player);
   }
 
   public addPlayerToRoom(roomId: string, player?: Player) {
-    const room = roomDb.getRoomById(roomId);
+    const room = roomDb.getById(roomId);
 
     if (!player || !room) {
       throw new Error(`addPlayerToRoom: either player or room doesnt't exist`);
     }
 
-    const roomUsers = [...room.roomUsers, { name: player.name, index: player.playerId }];
+    const roomUsers = [...room.roomUsers, { name: player.name, index: player.id }];
 
-    roomDb.updateRoom(roomId, {
+    roomDb.update(roomId, {
       roomUsers,
     });
 
     const isRoomFull = roomUsers.length > 1;
 
     if (isRoomFull) {
-      roomDb.removeRoom(roomId);
+      roomDb.remove(roomId);
     }
 
     return {

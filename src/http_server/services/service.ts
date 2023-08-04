@@ -1,14 +1,15 @@
 import { playerService } from './player.service';
 import { roomService } from './room.service';
 import { gameService } from './game.service';
-import { ArrangedMessage, Player, RoomIndex } from '../types/interfaces';
+import { winnerService } from './winner.service';
+import { ArrangedMessage, GameData, PlayerData, RoomData } from '../types/interfaces';
 import { MessageType, ServerMessageMode } from '../types/enums';
 
 class Service {
-  public handleRegister(data: Player, playerId: string) {
+  public handleRegister(data: PlayerData, playerId: string) {
     const registerData = playerService.register(data, playerId);
     const rooms = roomService.getRooms();
-    const winners = playerService.getWinners();
+    const winners = winnerService.getWinners();
 
     return [
       { mode: ServerMessageMode.SEND, data: registerData, type: MessageType.REGISTER },
@@ -20,23 +21,46 @@ class Service {
   public handleCreateRoom(playerId: string) {
     const player = playerService.getPlayer(playerId);
     roomService.createRoom(player);
-    const rooms = roomService.getRooms();
 
-    return [{ mode: ServerMessageMode.BROADCAST, data: rooms, type: MessageType.UPDATE_ROOM }];
+    return [{ mode: ServerMessageMode.BROADCAST, data: roomService.getRooms(), type: MessageType.UPDATE_ROOM }];
   }
 
-  public handleAddUser({ indexRoom: roomId }: RoomIndex, playerId: string) {
+  public handleAddUser({ indexRoom: roomId }: RoomData, playerId: string) {
     const player = playerService.getPlayer(playerId);
-    const { roomUsers } = roomService.addPlayerToRoom(roomId, player);
+    const { isRoomFull, playersIds } = roomService.addPlayerToRoom(roomId, player);
 
-    const rooms = roomService.getRooms();
+    const arrangedMessages: ArrangedMessage[] = [{ mode: ServerMessageMode.BROADCAST, data: roomService.getRooms(), type: MessageType.UPDATE_ROOM }];
 
-    const arrangedMessages: ArrangedMessage[] = [{ mode: ServerMessageMode.BROADCAST, data: rooms, type: MessageType.UPDATE_ROOM }];
+    if (isRoomFull) {
+      const { data, id: gameId } = gameService.createGame(playersIds[0], playersIds[1]);
+      playersIds.forEach((id) => playerService.addGameIdToPlayer(id, gameId));
+      arrangedMessages.push({ mode: ServerMessageMode.BROADCAST_SELECTIVE_CYCLE_DATA, data, type: MessageType.CREATE_GAME, wsIds: playersIds });
+    }
 
-    if (roomUsers.length > 1) {
-      const [playerId1, playerId2] = [roomUsers[0].index, roomUsers[1].index];
-      const gameData = gameService.createGame(playerId1, playerId2);
-      arrangedMessages.push({ mode: ServerMessageMode.BROADCAST_SELECTIVE_CYCLE_DATA, data: gameData, type: MessageType.CREATE_GAME, wsIds: [playerId1, playerId2] });
+    return arrangedMessages;
+  }
+
+  public handleAddShips(data: GameData, playerId: string) {
+    const { gameId } = playerService.getPlayer(playerId)!;
+    const { arePlayersReady, playersIds, gameData } = gameService.addShips(data, playerId, gameId);
+
+    const arrangedMessages: ArrangedMessage[] = [];
+
+    if (arePlayersReady) {
+      arrangedMessages.push(
+        {
+          mode: ServerMessageMode.BROADCAST_SELECTIVE_CYCLE_DATA,
+          data: gameService.startGame(gameData),
+          type: MessageType.START_GAME,
+          wsIds: playersIds,
+        },
+        {
+          mode: ServerMessageMode.BROADCAST_SELECTIVE,
+          data: { currentPlayer: playersIds[0] },
+          type: MessageType.TURN,
+          wsIds: playersIds,
+        }
+      );
     }
 
     return arrangedMessages;
