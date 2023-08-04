@@ -25,32 +25,20 @@ export interface DataArray
     data: unknown;
   }> {}
 
-export interface Player {
+export interface PlayerData {
   name: string;
   password: string;
 }
 
-export interface RegisteredPlayer extends Player {
+export interface UnregisteredPlayer extends PlayerData {
   id: string;
 }
 
-export interface RoomIndex {
+export interface RoomData {
   indexRoom: string;
 }
 
-export interface Room {
-  roomId: string;
-  roomUsers: { name: string; index: string }[];
-}
-
-export interface Game {
-  gameId: string;
-  player1: GamePlayer;
-  player2: GamePlayer;
-}
-
-export interface GamePlayer {
-  id: string;
+export interface GameData {
   ships: Ship[];
 }
 
