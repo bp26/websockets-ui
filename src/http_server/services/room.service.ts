@@ -1,34 +1,39 @@
 import { roomDb } from '../db/room.db';
-import { RegisteredPlayer } from '../types/interfaces';
+import { Player } from '../db/player.db';
 
 class RoomService {
   public getRooms() {
     return roomDb.getRooms();
   }
 
-  public createRoom(player?: RegisteredPlayer) {
+  public createRoom(player?: Player) {
     const { roomId } = roomDb.addRoom();
     this.addPlayerToRoom(roomId, player);
   }
 
-  public addPlayerToRoom(roomId: string, player?: RegisteredPlayer) {
+  public addPlayerToRoom(roomId: string, player?: Player) {
     const room = roomDb.getRoomById(roomId);
 
     if (!player || !room) {
       throw new Error(`addPlayerToRoom: either player or room doesnt't exist`);
     }
 
-    const roomUsers = [...room.roomUsers, { name: player.name, index: player.id }];
+    const roomUsers = [...room.roomUsers, { name: player.name, index: player.playerId }];
 
-    const updatedRoom = roomDb.updateRoom(roomId, {
+    roomDb.updateRoom(roomId, {
       roomUsers,
     });
 
-    if (roomUsers.length > 1) {
+    const isRoomFull = roomUsers.length > 1;
+
+    if (isRoomFull) {
       roomDb.removeRoom(roomId);
     }
 
-    return updatedRoom;
+    return {
+      isRoomFull,
+      playersIds: roomUsers.map((user) => user.index),
+    };
   }
 }
 
