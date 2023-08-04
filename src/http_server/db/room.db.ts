@@ -1,5 +1,10 @@
-import { Room } from '../types/interfaces';
+import {} from '../types/interfaces';
 import { v4 } from 'uuid';
+
+export class Room {
+  roomId: string = v4();
+  roomUsers: { name: string; index: string }[] = [];
+}
 
 class RoomDb {
   private rooms: Room[] = [];
@@ -9,10 +14,7 @@ class RoomDb {
   }
 
   public addRoom() {
-    const room = {
-      roomId: v4(),
-      roomUsers: [],
-    };
+    const room = new Room();
     this.rooms.push(room);
     return room;
   }
