@@ -1,11 +1,11 @@
-type FunctionConstructor = new (...args: any[]) => any;
+type FunctionConstructor = new (...args: any[]) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export interface DatabaseItem {
   id: string;
 }
 
 interface DatabaseItemConstructor {
-  new (...arg: any[]): DatabaseItem;
+  new (...arg: any[]): DatabaseItem; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export class Db<T extends FunctionConstructor & DatabaseItemConstructor, U extends DatabaseItem> {
