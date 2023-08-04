@@ -1,21 +1,37 @@
 import { playerDb } from '../db/player.db';
-import { Player } from '../types/interfaces';
+import { PlayerData } from '../types/interfaces';
 
 class PlayerService {
-  public register({ name, password }: Player, playerId: string) {
-    try {
-      const user = playerDb.addPlayer({ name, password, id: playerId });
-      return {
-        ...user,
-        error: false,
-        errorText: '',
-      };
-    } catch (error) {
+  public register({ name, password }: PlayerData, playerId: string) {
+    const oldPlayer = playerDb.getPlayerByName(name);
+
+    if (!oldPlayer) {
+      playerDb.addPlayer({ name, password, id: playerId });
+    } else if (oldPlayer.password !== password) {
       return {
         error: true,
-        errorText: (error as Error).message,
+        errorText: 'Wrong password',
       };
+    } else {
+      playerDb.updatePlayer(oldPlayer.playerId, {
+        playerId,
+        online: true,
+      });
     }
+
+    const player = playerDb.getPlayerById(playerId)!;
+
+    return {
+      ...{ name: player.name, index: player.playerId },
+      error: false,
+      errorText: '',
+    };
+  }
+
+  public addGameIdToPlayer(playerId: string, gameId: string) {
+    playerDb.updatePlayer(playerId, {
+      gameId,
+    });
   }
 
   public getPlayer(id: string) {
