@@ -79,12 +79,7 @@ class Controller {
             this.server.clients.forEach((client) => {
               const clientId = (client as ExtWebSocket).id;
               if (wsIds.includes(clientId)) {
-                client.send(
-                  this.generateOutgoingMessage(
-                    type,
-                    (data as DataArray).find((item) => item.id === clientId)
-                  )
-                );
+                client.send(this.generateOutgoingMessage(type, (data as DataArray).find((item) => item.id === clientId)!.data));
               }
             });
           }
