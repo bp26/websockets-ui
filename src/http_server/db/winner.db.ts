@@ -1,7 +1,7 @@
-import { Db, DatabaseItem } from './db';
+import { NamedDatabaseItem, ExtDb } from './db';
 import { v4 } from 'uuid';
 
-export class Winner implements DatabaseItem {
+export class Winner implements NamedDatabaseItem {
   id: string = v4();
   wins: number = 1;
   name: string;
@@ -11,13 +11,4 @@ export class Winner implements DatabaseItem {
   }
 }
 
-class WinnerDb extends Db<typeof Winner, Winner> {
-  constructor() {
-    super(Winner);
-  }
-  public getByName(name: string) {
-    return this.items.find((item) => item.name === name);
-  }
-}
-
-export const winnerDb = new WinnerDb();
+export const winnerDb = new ExtDb<typeof Winner, Winner>(Winner);

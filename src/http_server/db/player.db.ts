@@ -1,6 +1,6 @@
-import { DatabaseItem, Db } from './db';
+import { ExtDb, NamedDatabaseItem } from './db';
 
-export class Player implements DatabaseItem {
+export class Player implements NamedDatabaseItem {
   name: string;
   password: string;
   id: string;
@@ -14,13 +14,4 @@ export class Player implements DatabaseItem {
   }
 }
 
-class PlayerDb extends Db<typeof Player, Player> {
-  constructor() {
-    super(Player);
-  }
-  public getByName(name: string) {
-    return this.items.find((item) => item.name === name);
-  }
-}
-
-export const playerDb = new PlayerDb();
+export const playerDb = new ExtDb<typeof Player, Player>(Player);
