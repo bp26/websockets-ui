@@ -1,14 +1,10 @@
-type FunctionConstructor = new (...args: any[]) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
+type DatabaseItemConstructor<U> = new (...arg: any[]) => U; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export interface DatabaseItem {
   id: string;
 }
 
-interface DatabaseItemConstructor {
-  new (...arg: any[]): DatabaseItem; // eslint-disable-line @typescript-eslint/no-explicit-any
-}
-
-export class Db<T extends FunctionConstructor & DatabaseItemConstructor, U extends DatabaseItem> {
+export class Db<T extends DatabaseItemConstructor<U>, U extends DatabaseItem> {
   items: U[] = [];
   protected itemConstructor: T;
 
@@ -41,5 +37,19 @@ export class Db<T extends FunctionConstructor & DatabaseItemConstructor, U exten
 
   public remove(id: string) {
     this.items.filter((item) => item.id !== id);
+  }
+}
+
+export interface NamedDatabaseItem extends DatabaseItem {
+  name: string;
+}
+
+export class ExtDb<T extends DatabaseItemConstructor<U>, U extends NamedDatabaseItem> extends Db<T, U> {
+  constructor(itemConstructor: T) {
+    super(itemConstructor);
+  }
+
+  public getByName(name: string) {
+    return this.items.find((item) => item.name === name);
   }
 }
