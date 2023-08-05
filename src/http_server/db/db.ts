@@ -36,7 +36,10 @@ export class Db<T extends DatabaseItemConstructor<U>, U extends DatabaseItem> {
   }
 
   public remove(id: string) {
-    this.items.filter((item) => item.id !== id);
+    const index = this.items.findIndex((item) => item.id === id);
+    if (index !== -1) {
+      this.items.splice(index, 1);
+    }
   }
 }
 
