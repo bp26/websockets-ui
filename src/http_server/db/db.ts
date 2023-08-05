@@ -5,7 +5,7 @@ export interface DatabaseItem {
 }
 
 export class Db<T extends DatabaseItemConstructor<U>, U extends DatabaseItem> {
-  items: U[] = [];
+  protected items: U[] = [];
   protected itemConstructor: T;
 
   constructor(itemConstructor: T) {
@@ -13,17 +13,17 @@ export class Db<T extends DatabaseItemConstructor<U>, U extends DatabaseItem> {
   }
 
   public getAll(): U[] {
-    return this.items;
+    return structuredClone(this.items);
   }
 
   public add(...args: ConstructorParameters<T>): U {
     const item = new this.itemConstructor(...args);
     this.items.push(item);
-    return item;
+    return structuredClone(item);
   }
 
   public getById(id: string): U | undefined {
-    return this.items.find((item) => item.id === id);
+    return structuredClone(this.items.find((item) => item.id === id));
   }
 
   public update(id: string, data: Partial<U>): U {
@@ -32,7 +32,7 @@ export class Db<T extends DatabaseItemConstructor<U>, U extends DatabaseItem> {
       ...this.items[index],
       ...data,
     };
-    return this.items[index];
+    return structuredClone(this.items[index]);
   }
 
   public remove(id: string) {
@@ -50,6 +50,6 @@ export class ExtDb<T extends DatabaseItemConstructor<U>, U extends NamedDatabase
   }
 
   public getByName(name: string) {
-    return this.items.find((item) => item.name === name);
+    return structuredClone(this.items.find((item) => item.name === name));
   }
 }
