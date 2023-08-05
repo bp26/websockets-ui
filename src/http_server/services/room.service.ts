@@ -3,7 +3,12 @@ import { Player } from '../db/player.db';
 
 class RoomService {
   public getRooms() {
-    return roomDb.getAll();
+    return roomDb.getAll().map((room) => {
+      return {
+        ...room,
+        roomId: room.id,
+      };
+    });
   }
 
   public createRoom(player?: Player) {
@@ -18,7 +23,11 @@ class RoomService {
       throw new Error(`addPlayerToRoom: either player or room doesnt't exist`);
     }
 
-    const roomUsers = [...room.roomUsers, { name: player.name, index: player.id }];
+    const roomUsers = [...room.roomUsers];
+
+    if (!room.roomUsers.find((user) => user.index === player.id)) {
+      roomUsers.push({ name: player.name, index: player.id });
+    }
 
     roomDb.update(roomId, {
       roomUsers,
