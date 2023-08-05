@@ -1,6 +1,11 @@
-import request from 'superwstest';
+import request, { WSChain } from 'superwstest';
 import server from '..';
 import { MessageType } from '../types/enums';
+import { roomDb } from '../db/room.db';
+
+const playerName = 'Aleksey';
+const secondaryPlayerName = 'Sergey';
+const playerPassword = 'password';
 
 const formMessage = (type: MessageType, data: unknown) => {
   return {
@@ -10,17 +15,28 @@ const formMessage = (type: MessageType, data: unknown) => {
   };
 };
 
-describe('Registration', () => {
-  const expectedName = 'Aleksey';
+const register = (ws: WSChain, name: string): WSChain =>
+  ws
+    .sendJson(
+      formMessage(MessageType.REGISTER, {
+        name,
+        password: playerPassword,
+      })
+    )
+    .expectJson()
+    .expectJson()
+    .expectJson();
+
+describe('Registration functionality', () => {
   const expectedType = MessageType.REGISTER;
 
-  const message = formMessage(expectedType, {
-    name: expectedName,
-    password: 'correct',
+  const message = formMessage(MessageType.REGISTER, {
+    name: playerName,
+    password: playerPassword,
   });
 
-  const incorrectMessage = formMessage(expectedType, {
-    name: expectedName,
+  const incorrectMessage = formMessage(MessageType.REGISTER, {
+    name: playerName,
     password: 'incorrect',
   });
 
@@ -32,7 +48,7 @@ describe('Registration', () => {
     server.close(done);
   });
 
-  it('Returns correct data upon registration', async () => {
+  it(`Returns correct registration data upon registration`, async () => {
     await request(server)
       .ws('/path/ws')
       .sendJson(message)
@@ -42,13 +58,13 @@ describe('Registration', () => {
 
         const { name, index, error } = JSON.parse(data);
 
-        expect(name).toEqual(expectedName);
+        expect(name).toEqual(playerName);
         expect(typeof index).toEqual('string');
         expect(error).toEqual(false);
       });
   });
 
-  it('Returns error upon login with wrong password', async () => {
+  it(`Returns error upon login with wrong password (message 'reg')`, async () => {
     await request(server)
       .ws('/path/ws')
       .sendJson(incorrectMessage)
@@ -60,16 +76,71 @@ describe('Registration', () => {
       });
   });
 
-  it('Returns error if user already online', async () => {
-    await request(server).ws('/path/ws').sendJson(message);
+  it(`Returns rooms and winners data upon registration`, async () => {
     await request(server)
       .ws('/path/ws')
       .sendJson(message)
-      .expectJson(({ data }) => {
-        const { error, errorText } = JSON.parse(data);
+      .expectJson()
+      .expectJson(({ type, data }) => {
+        expect(type).toEqual(MessageType.UPDATE_ROOM);
 
-        expect(error).toEqual(true);
-        expect(errorText).toBeTruthy();
+        expect(JSON.parse(data)).toEqual([]);
+      })
+      .expectJson(({ type, data }) => {
+        expect(type).toEqual(MessageType.UPDATE_WINNERS);
+
+        expect(JSON.parse(data)).toEqual([]);
+      });
+  });
+});
+
+describe('Room functionality', () => {
+  beforeEach((done) => {
+    server.listen(0, 'localhost', done);
+  });
+
+  afterEach((done) => {
+    server.close(done);
+  });
+
+  it('Returns updated room data (user already in the created room) upon creating a room', async () => {
+    const registeredRequest = register(request(server).ws('/path/ws'), playerName);
+    await registeredRequest.sendJson(formMessage(MessageType.CREATE_ROOM, '')).expectJson(({ type, data }) => {
+      expect(type).toEqual(MessageType.UPDATE_ROOM);
+
+      const parsedData = JSON.parse(data);
+      expect(Array.isArray(parsedData)).toBeTruthy();
+      expect(parsedData.length).toEqual(1);
+
+      const { roomId, roomUsers } = parsedData[0];
+
+      expect(typeof roomId).toEqual('string');
+      expect(Array.isArray(roomUsers)).toBeTruthy();
+      expect(roomUsers.length).toEqual(1);
+
+      const { name } = roomUsers[0];
+      expect(name).toEqual(playerName);
+    });
+  });
+
+  it('Removes the room and returns game data for created game', async () => {
+    const registeredRequest = register(request(server).ws('/path/ws'), secondaryPlayerName);
+    await registeredRequest
+      .sendJson(
+        formMessage(MessageType.ADD_USER, {
+          indexRoom: roomDb.getAll()[0].id,
+        })
+      )
+      .expectJson(({ data, type }) => {
+        expect(type).toEqual(MessageType.UPDATE_ROOM);
+        expect(JSON.parse(data)).toEqual([]);
+      })
+      .expectJson(({ data, type }) => {
+        expect(type).toEqual(MessageType.CREATE_GAME);
+
+        const { idGame, idPlayer } = JSON.parse(data);
+        expect(typeof idGame).toEqual('string');
+        expect(typeof idPlayer).toEqual('string');
       });
   });
 });
