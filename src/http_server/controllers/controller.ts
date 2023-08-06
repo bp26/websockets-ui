@@ -2,6 +2,7 @@ import { WebSocketServer } from 'ws';
 import { MessageType, ServerMessageMode } from '../types/enums';
 import { ArrangedMessage, Message, ExtWebSocket, DataArray } from '../types/interfaces';
 import service from '../services/service';
+import { ServerError } from '../utils/ServerError';
 
 class Controller {
   private server: WebSocketServer;
@@ -14,38 +15,53 @@ class Controller {
 
   public handleMessage({ type, data }: Message<string>) {
     try {
+      let outgoingData;
+
       switch (type) {
         case MessageType.REGISTER: {
-          const outgoingData = service.handleRegister(JSON.parse(data), this.ws.id);
-          this.dispatchMessages(outgoingData);
+          outgoingData = service.handleRegister(JSON.parse(data), this.ws.id);
           break;
         }
 
         case MessageType.CREATE_ROOM: {
-          const outgoingData = service.handleCreateRoom(this.ws.id);
-          this.dispatchMessages(outgoingData);
+          outgoingData = service.handleCreateRoom(this.ws.id);
           break;
         }
 
         case MessageType.ADD_USER: {
-          const outgoingData = service.handleAddUser(JSON.parse(data), this.ws.id);
-          this.dispatchMessages(outgoingData);
+          outgoingData = service.handleAddUser(JSON.parse(data), this.ws.id);
           break;
         }
 
         case MessageType.ADD_SHIPS: {
-          const outgoingData = service.handleAddShips(JSON.parse(data), this.ws.id);
-          this.dispatchMessages(outgoingData);
+          outgoingData = service.handleAddShips(JSON.parse(data), this.ws.id);
+          break;
+        }
+
+        case MessageType.ATTACK: {
+          outgoingData = service.handleAddShips(JSON.parse(data), this.ws.id);
           break;
         }
       }
+
+      if (outgoingData) {
+        this.dispatchMessages(outgoingData);
+      }
     } catch (error) {
-      console.log(error);
+      this.handleError(error);
     }
   }
 
   public handleClose() {
     service.handleClose(this.ws.id);
+  }
+
+  public handleError(error: Error) {
+    if (error instanceof ServerError) {
+      this.ws.send(this.generateOutgoingMessage(MessageType.ERROR, { errorText: error.message }));
+    }
+
+    console.log(error);
   }
 
   private dispatchMessages(outgoingData: ArrangedMessage[]) {
