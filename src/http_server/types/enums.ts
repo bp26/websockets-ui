@@ -11,6 +11,7 @@ export const enum MessageType {
   RANDOM_ATTACK = 'randomAttack',
   TURN = 'turn',
   FINISH = 'finish',
+  ERROR = 'error',
 }
 
 export const enum ServerMessageMode {
