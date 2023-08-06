@@ -1,5 +1,7 @@
 import { roomDb } from '../db/room.db';
 import { Player } from '../db/player.db';
+import { ServerError } from '../utils/ServerError';
+import { ERROR_ROOM_DOESNT_EXIST } from '../utils/constants';
 
 class RoomService {
   public getRooms() {
@@ -11,16 +13,20 @@ class RoomService {
     });
   }
 
-  public createRoom(player?: Player) {
+  public getRoomById(id: string) {
+    return roomDb.getById(id);
+  }
+
+  public createRoom(player: Player) {
     const { id } = roomDb.add();
     this.addPlayerToRoom(id, player);
   }
 
-  public addPlayerToRoom(roomId: string, player?: Player) {
+  public addPlayerToRoom(roomId: string, player: Player) {
     const room = roomDb.getById(roomId);
 
-    if (!player || !room) {
-      throw new Error(`addPlayerToRoom: either player or room doesnt't exist`);
+    if (!room) {
+      throw new ServerError(ERROR_ROOM_DOESNT_EXIST);
     }
 
     const roomUsers = [...room.roomUsers];
