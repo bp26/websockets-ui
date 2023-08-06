@@ -4,29 +4,38 @@ import { gameService } from './game.service';
 import { winnerService } from './winner.service';
 import { ArrangedMessage, GameData, PlayerData, RoomData } from '../types/interfaces';
 import { MessageType, ServerMessageMode } from '../types/enums';
+import { ServerError } from '../utils/ServerError';
+import { ERROR_PLAYER_NOT_LOGGED_IN } from '../utils/constants';
 
 class Service {
-  public handleRegister(data: PlayerData, playerId: string) {
+  public handleRegister(data: PlayerData, playerId: string): ArrangedMessage[] {
     const registerData = playerService.register(data, playerId);
-    const rooms = roomService.getRooms();
-    const winners = winnerService.getWinners();
 
     return [
       { mode: ServerMessageMode.SEND, data: registerData, type: MessageType.REGISTER },
-      { mode: ServerMessageMode.BROADCAST, data: rooms, type: MessageType.UPDATE_ROOM },
-      { mode: ServerMessageMode.BROADCAST, data: winners, type: MessageType.UPDATE_WINNERS },
+      { mode: ServerMessageMode.BROADCAST, data: roomService.getRooms(), type: MessageType.UPDATE_ROOM },
+      { mode: ServerMessageMode.BROADCAST, data: winnerService.getWinners(), type: MessageType.UPDATE_WINNERS },
     ];
   }
 
-  public handleCreateRoom(playerId: string) {
-    const player = playerService.getPlayer(playerId);
-    roomService.createRoom(player);
+  public handleCreateRoom(playerId: string): ArrangedMessage[] {
+    const player = playerService.getPlayerById(playerId);
 
+    if (!player) {
+      throw new ServerError(ERROR_PLAYER_NOT_LOGGED_IN);
+    }
+
+    roomService.createRoom(player);
     return [{ mode: ServerMessageMode.BROADCAST, data: roomService.getRooms(), type: MessageType.UPDATE_ROOM }];
   }
 
-  public handleAddUser({ indexRoom: roomId }: RoomData, playerId: string) {
-    const player = playerService.getPlayer(playerId);
+  public handleAddUser({ indexRoom: roomId }: RoomData, playerId: string): ArrangedMessage[] {
+    const player = playerService.getPlayerById(playerId);
+
+    if (!player) {
+      throw new ServerError(ERROR_PLAYER_NOT_LOGGED_IN);
+    }
+
     const { isRoomFull, playersIds } = roomService.addPlayerToRoom(roomId, player);
 
     const arrangedMessages: ArrangedMessage[] = [{ mode: ServerMessageMode.BROADCAST, data: roomService.getRooms(), type: MessageType.UPDATE_ROOM }];
@@ -40,9 +49,14 @@ class Service {
     return arrangedMessages;
   }
 
-  public handleAddShips(data: GameData, playerId: string) {
-    const { gameId } = playerService.getPlayer(playerId)!;
-    const { arePlayersReady, playersIds, gameData } = gameService.addShips(data, playerId, gameId);
+  public handleAddShips(data: GameData, playerId: string): ArrangedMessage[] {
+    const player = playerService.getPlayerById(playerId);
+
+    if (!player) {
+      throw new ServerError(ERROR_PLAYER_NOT_LOGGED_IN);
+    }
+
+    const { arePlayersReady, playersIds, gameData } = gameService.addShips(data, playerId, player.gameId);
 
     const arrangedMessages: ArrangedMessage[] = [];
 
@@ -56,7 +70,7 @@ class Service {
         },
         {
           mode: ServerMessageMode.BROADCAST_SELECTIVE,
-          data: { currentPlayer: playersIds[0] },
+          data: gameService.beginTurn(playersIds[0]),
           type: MessageType.TURN,
           wsIds: playersIds,
         }
