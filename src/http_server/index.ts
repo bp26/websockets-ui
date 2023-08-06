@@ -20,6 +20,10 @@ wsServer.on('connection', (ws: ExtWebSocket) => {
   ws.on('close', () => {
     controller.handleClose();
   });
+
+  ws.on('error', (error: Error) => {
+    controller.handleError(error);
+  });
 });
 
 export default server;
