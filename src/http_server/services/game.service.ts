@@ -1,6 +1,8 @@
 import { gameDb } from '../db/game.db';
 import { GameData } from '../types/interfaces';
 import { Game } from '../db/game.db';
+import { ServerError } from '../utils/ServerError';
+import { ERROR_GAME_NOT_CREATED } from '../utils/constants';
 
 class GameService {
   public createGame(playerId1: string, playerId2: string) {
@@ -28,7 +30,7 @@ class GameService {
     const game = gameDb.getById(gameId);
 
     if (!game) {
-      throw new Error(`addShips: game doesnt't exist`);
+      throw new ServerError(ERROR_GAME_NOT_CREATED);
     }
 
     const { players } = game;
@@ -57,10 +59,17 @@ class GameService {
   public startGame({ players }: Game) {
     return players.map((player) => {
       return {
-        ships: player.ships,
-        currentPlayerIndex: player.indexPlayer,
+        id: player.indexPlayer,
+        data: {
+          ships: player.ships,
+          currentPlayerIndex: player.indexPlayer,
+        },
       };
     });
+  }
+
+  public beginTurn(playerId: string) {
+    return { currentPlayer: playerId };
   }
 }
 
