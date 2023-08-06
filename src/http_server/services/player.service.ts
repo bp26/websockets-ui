@@ -1,5 +1,6 @@
 import { playerDb } from '../db/player.db';
 import { PlayerData } from '../types/interfaces';
+import { ERROR_PLAYER_ALREADY_ONLINE, ERROR_PLAYER_WRONG_PASSWORD } from '../utils/constants';
 
 class PlayerService {
   public register({ name, password }: PlayerData, playerId: string) {
@@ -10,12 +11,12 @@ class PlayerService {
     } else if (oldPlayer.password !== password) {
       return {
         error: true,
-        errorText: 'Wrong password',
+        errorText: ERROR_PLAYER_WRONG_PASSWORD,
       };
     } else if (oldPlayer.online) {
       return {
         error: true,
-        errorText: 'User already online',
+        errorText: ERROR_PLAYER_ALREADY_ONLINE,
       };
     } else {
       playerDb.update(oldPlayer.id, {
@@ -50,7 +51,7 @@ class PlayerService {
     }
   }
 
-  public getPlayer(id: string) {
+  public getPlayerById(id: string) {
     return playerDb.getById(id);
   }
 }
