@@ -39,7 +39,7 @@ class Controller {
         }
 
         case MessageType.ATTACK: {
-          outgoingData = service.handleAddShips(JSON.parse(data), this.ws.id);
+          outgoingData = service.handleAttack(JSON.parse(data));
           break;
         }
       }

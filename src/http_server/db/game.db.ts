@@ -14,6 +14,7 @@ class GamePlayer {
 
 export class Game implements DatabaseItem {
   id: string = v4();
+  gameOn = false;
   players: GamePlayer[];
 
   constructor(playerId1: string, playerId2: string) {

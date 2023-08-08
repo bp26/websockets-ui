@@ -1,8 +1,9 @@
 import { gameDb } from '../db/game.db';
-import { GameData } from '../types/interfaces';
+import { AttackData, GameData, Ship } from '../types/interfaces';
 import { Game } from '../db/game.db';
 import { ServerError } from '../utils/ServerError';
 import { ERROR_GAME_NOT_CREATED } from '../utils/constants';
+import { fillArray } from '../utils/fillArray';
 
 class GameService {
   public createGame(playerId1: string, playerId2: string) {
@@ -35,12 +36,19 @@ class GameService {
 
     const { players } = game;
 
+    const adaptedShips = ships.map((ship) => {
+      return {
+        ...ship,
+        cull: fillArray(ship.length),
+      };
+    });
+
     const updatedPlayers = players.map((player) => {
-      if (player.indexPlayer === playerId) {
+      if (player.indexPlayer === playerId && !player.populated) {
         return {
           ...player,
           populated: true,
-          ships,
+          ships: adaptedShips,
         };
       } else {
         return player;
@@ -56,7 +64,11 @@ class GameService {
     };
   }
 
-  public startGame({ players }: Game) {
+  public startGame({ players, id }: Game) {
+    gameDb.update(id, {
+      gameOn: true,
+    });
+
     return players.map((player) => {
       return {
         id: player.indexPlayer,
@@ -70,6 +82,27 @@ class GameService {
 
   public beginTurn(playerId: string) {
     return { currentPlayer: playerId };
+  }
+
+  public performAttack({ gameId, x, y, indexPlayer }: AttackData) {
+    const game = gameDb.getById(gameId);
+
+    if (!game) {
+      throw new ServerError(ERROR_GAME_NOT_CREATED);
+    }
+
+    const gamePlayer = game.players.find((player) => player.indexPlayer === indexPlayer);
+
+    if (!gamePlayer) {
+      throw new ServerError(`This player isn't in this game`);
+    }
+  }
+
+  private shootShip(x: number, y: number, ships: Ship[]) {
+    const shotShip = ships.find((ship) => {
+      const starter = ship.direction ? x : y;
+      const positions = ship.cull.map((value) => value + starter);
+    });
   }
 }
 

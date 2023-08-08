@@ -2,7 +2,7 @@ import { playerService } from './player.service';
 import { roomService } from './room.service';
 import { gameService } from './game.service';
 import { winnerService } from './winner.service';
-import { ArrangedMessage, GameData, PlayerData, RoomData } from '../types/interfaces';
+import { ArrangedMessage, AttackData, GameData, PlayerData, RoomData } from '../types/interfaces';
 import { MessageType, ServerMessageMode } from '../types/enums';
 import { ServerError } from '../utils/ServerError';
 import { ERROR_PLAYER_NOT_LOGGED_IN } from '../utils/constants';
@@ -78,6 +78,16 @@ class Service {
     }
 
     return arrangedMessages;
+  }
+
+  public handleAttack(data: AttackData) {
+    const player = playerService.getPlayerById(data.indexPlayer);
+
+    if (!player) {
+      throw new ServerError(ERROR_PLAYER_NOT_LOGGED_IN);
+    }
+
+    gameService.performAttack(data);
   }
 
   public handleClose(playerId: string) {

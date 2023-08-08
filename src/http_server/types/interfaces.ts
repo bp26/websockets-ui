@@ -38,11 +38,7 @@ export interface RoomData {
   indexRoom: string;
 }
 
-export interface GameData {
-  ships: Ship[];
-}
-
-export interface Ship {
+export interface ShipData {
   position: {
     x: number;
     y: number;
@@ -50,4 +46,19 @@ export interface Ship {
   direction: boolean;
   length: number;
   type: ShipType;
+}
+
+export interface Ship extends ShipData {
+  cull: number[];
+}
+
+export interface GameData {
+  ships: ShipData[];
+}
+
+export interface AttackData {
+  gameId: string;
+  x: number;
+  y: number;
+  indexPlayer: string;
 }
