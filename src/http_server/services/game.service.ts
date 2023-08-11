@@ -1,9 +1,9 @@
-import { gameDb } from '../db/game.db';
+import { Game, gameDb } from '../db/game.db';
 import { AttackData, GameData, Ship } from '../types/interfaces';
-import { Game } from '../db/game.db';
 import { ServerError } from '../utils/ServerError';
-import { ERROR_GAME_NOT_CREATED } from '../utils/constants';
+import { ERROR_GAME_NOT_CREATED, ERROR_GAME_NOT_STARTED, ERROR_GAME_PLAYER_NOT_IN_GAME, ERROR_GAME_WRONG_PLAYER } from '../utils/constants';
 import { fillArray } from '../utils/fillArray';
+import { AttackResult } from '../types/enums';
 
 class GameService {
   public createGame(playerId1: string, playerId2: string) {
@@ -34,8 +34,6 @@ class GameService {
       throw new ServerError(ERROR_GAME_NOT_CREATED);
     }
 
-    const { players } = game;
-
     const adaptedShips = ships.map((ship) => {
       return {
         ...ship,
@@ -43,7 +41,7 @@ class GameService {
       };
     });
 
-    const updatedPlayers = players.map((player) => {
+    const updatedPlayers = game.players.map((player) => {
       if (player.indexPlayer === playerId && !player.populated) {
         return {
           ...player,
@@ -58,7 +56,7 @@ class GameService {
     const updatedGame = gameDb.update(gameId, { players: updatedPlayers });
 
     return {
-      arePlayersReady: !updatedPlayers.find((item) => item.populated === false),
+      arePlayersReady: !updatedPlayers.find((item) => !item.populated),
       playersIds: updatedPlayers.map((player) => player.indexPlayer),
       gameData: updatedGame,
     };
@@ -80,7 +78,10 @@ class GameService {
     });
   }
 
-  public beginTurn(playerId: string) {
+  public beginTurn(gameId: string, playerId: string) {
+    gameDb.update(gameId, {
+      currentPlayer: playerId,
+    });
     return { currentPlayer: playerId };
   }
 
@@ -91,18 +92,96 @@ class GameService {
       throw new ServerError(ERROR_GAME_NOT_CREATED);
     }
 
+    if (!game.gameOn) {
+      throw new ServerError(ERROR_GAME_NOT_STARTED);
+    }
+
     const gamePlayer = game.players.find((player) => player.indexPlayer === indexPlayer);
 
     if (!gamePlayer) {
-      throw new ServerError(`This player isn't in this game`);
+      throw new ServerError(ERROR_GAME_PLAYER_NOT_IN_GAME);
     }
+
+    if (game.currentPlayer !== indexPlayer) {
+      throw new ServerError(ERROR_GAME_WRONG_PLAYER);
+    }
+
+    const enemyPlayer = game.players.find((player) => player.indexPlayer !== indexPlayer)!;
+
+    const { status, ships } = this.shootShips(x, y, enemyPlayer.ships);
+
+    if (status !== AttackResult.MISS) {
+      const updatedPlayers = game.players.map((player) => {
+        if (player.indexPlayer === enemyPlayer.indexPlayer) {
+          return {
+            ...player,
+            ships,
+          };
+        }
+
+        return player;
+      });
+
+      gameDb.update(gameId, { players: updatedPlayers });
+    }
+
+    const playersIds = game.players.map((player) => player.indexPlayer);
+
+    return {
+      nextPlayer: status === AttackResult.MISS ? playersIds.find((id) => id !== indexPlayer)! : indexPlayer,
+      playersIds,
+      data: {
+        position: {
+          x,
+          y,
+        },
+        currentPlayer: indexPlayer,
+        status,
+      },
+    };
   }
 
-  private shootShip(x: number, y: number, ships: Ship[]) {
-    const shotShip = ships.find((ship) => {
-      const starter = ship.direction ? x : y;
-      const positions = ship.cull.map((value) => value + starter);
-    });
+  private shootShips(shotX: number, shotY: number, ships: Ship[]) {
+    let status: AttackResult = AttackResult.MISS;
+
+    const shotShips = ships.reduce<Ship[]>((acc, ship) => {
+      const { direction, cull, position } = ship;
+      const [lengthPosition, widthPosition] = direction ? [position.y, position.x] : [position.x, position.y];
+      const [lengthShot, widthShot] = direction ? [shotY, shotX] : [shotX, shotY];
+      const lengthPositions = cull.map((item) => item + lengthPosition);
+
+      if (widthShot !== widthPosition || !lengthPositions.includes(lengthShot)) {
+        return [...acc, ship];
+      }
+
+      const index = lengthPositions.findIndex((position) => position === lengthShot);
+
+      console.log(cull);
+
+      const shotCull = [...cull.slice(0, index), ...cull.slice(index + 1)];
+
+      console.log(shotCull);
+
+      if (shotCull.length === 0) {
+        status = AttackResult.KILLED;
+        return acc;
+      }
+
+      status = AttackResult.SHOT;
+
+      return [
+        ...acc,
+        {
+          ...ship,
+          cull: shotCull,
+        },
+      ];
+    }, []);
+
+    return {
+      status,
+      ships: shotShips,
+    };
   }
 }
 
