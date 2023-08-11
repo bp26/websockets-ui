@@ -1,4 +1,4 @@
-import { Db, DatabaseItem } from './db';
+import { DatabaseItem, Db } from './db';
 import { v4 } from 'uuid';
 import { Ship } from '../types/interfaces';
 
@@ -14,6 +14,7 @@ class GamePlayer {
 
 export class Game implements DatabaseItem {
   id: string = v4();
+  currentPlayer: string = '';
   gameOn = false;
   players: GamePlayer[];
 
