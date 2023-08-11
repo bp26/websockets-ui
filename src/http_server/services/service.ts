@@ -38,12 +38,23 @@ class Service {
 
     const { isRoomFull, playersIds } = roomService.addPlayerToRoom(roomId, player);
 
-    const arrangedMessages: ArrangedMessage[] = [{ mode: ServerMessageMode.BROADCAST, data: roomService.getRooms(), type: MessageType.UPDATE_ROOM }];
+    const arrangedMessages: ArrangedMessage[] = [
+      {
+        mode: ServerMessageMode.BROADCAST,
+        data: roomService.getRooms(),
+        type: MessageType.UPDATE_ROOM,
+      },
+    ];
 
     if (isRoomFull) {
       const { data, id: gameId } = gameService.createGame(playersIds[0], playersIds[1]);
       playersIds.forEach((id) => playerService.addGameIdToPlayer(id, gameId));
-      arrangedMessages.push({ mode: ServerMessageMode.BROADCAST_SELECTIVE_CYCLE_DATA, data, type: MessageType.CREATE_GAME, wsIds: playersIds });
+      arrangedMessages.push({
+        mode: ServerMessageMode.BROADCAST_SELECTIVE_CYCLE_DATA,
+        data,
+        type: MessageType.CREATE_GAME,
+        wsIds: playersIds,
+      });
     }
 
     return arrangedMessages;
@@ -70,7 +81,7 @@ class Service {
         },
         {
           mode: ServerMessageMode.BROADCAST_SELECTIVE,
-          data: gameService.beginTurn(playersIds[0]),
+          data: gameService.beginTurn(gameData.id, playersIds[0]),
           type: MessageType.TURN,
           wsIds: playersIds,
         }
@@ -87,7 +98,22 @@ class Service {
       throw new ServerError(ERROR_PLAYER_NOT_LOGGED_IN);
     }
 
-    gameService.performAttack(data);
+    const { nextPlayer, data: outgoingData, playersIds } = gameService.performAttack(data);
+
+    return [
+      {
+        mode: ServerMessageMode.BROADCAST_SELECTIVE,
+        data: outgoingData,
+        type: MessageType.ATTACK,
+        wsIds: playersIds,
+      },
+      {
+        mode: ServerMessageMode.BROADCAST_SELECTIVE,
+        data: gameService.beginTurn(data.gameId, nextPlayer),
+        type: MessageType.TURN,
+        wsIds: playersIds,
+      },
+    ];
   }
 
   public handleClose(playerId: string) {
