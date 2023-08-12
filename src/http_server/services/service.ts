@@ -135,7 +135,7 @@ class Service {
     }
 
     if (areShipsEmpty) {
-      return this.handleWin(data, player, playersIds);
+      return this.handleWin(player, playersIds);
     } else {
       arrangedMessages.push({
         mode: ServerMessageMode.BROADCAST_SELECTIVE,
@@ -154,17 +154,30 @@ class Service {
   }
 
   public handleClose(playerId: string) {
-    playerService.logoffPlayer(playerId);
+    const { player } = playerService.logoffPlayer(playerId);
+
+    const arrangedMessages: ArrangedMessage[] = [];
+
+    if (player) {
+      const enemyId = gameService.getEnemyId(player.gameId, playerId);
+
+      if (enemyId) {
+        const enemyPlayer = playerService.getPlayerById(enemyId)!;
+        arrangedMessages.push(...this.handleWin(enemyPlayer, [enemyId]));
+      }
+    }
+
+    return arrangedMessages;
   }
 
-  private handleWin(gameData: AttackData, player: Player, playersIds: string[]) {
+  private handleWin({ gameId, id: playerId, name }: Player, playersIds: string[]) {
     playersIds.forEach((id) => playerService.addGameIdToPlayer(id, ''));
-    winnerService.addWin(player.name);
+    winnerService.addWin(name);
 
     return [
       {
         mode: ServerMessageMode.BROADCAST_SELECTIVE,
-        data: gameService.finishGame(gameData.gameId, gameData.indexPlayer),
+        data: gameService.finishGame(gameId, playerId),
         type: MessageType.FINISH,
         wsIds: playersIds,
       },

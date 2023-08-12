@@ -58,7 +58,8 @@ class Controller {
   }
 
   public handleClose() {
-    service.handleClose(this.ws.id);
+    const outgoingData = service.handleClose(this.ws.id);
+    this.dispatchMessages(outgoingData);
   }
 
   public handleError(error: Error) {

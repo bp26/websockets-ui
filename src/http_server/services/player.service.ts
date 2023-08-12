@@ -49,6 +49,8 @@ class PlayerService {
         gameId: '',
       });
     }
+
+    return { player };
   }
 
   public getPlayerById(id: string) {
