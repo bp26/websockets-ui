@@ -1,6 +1,6 @@
 import { WebSocketServer } from 'ws';
 import { MessageType, ServerMessageMode } from '../types/enums';
-import { ArrangedMessage, Message, ExtWebSocket, DataArray } from '../types/interfaces';
+import { ArrangedMessage, DataArray, ExtWebSocket, Message } from '../types/interfaces';
 import service from '../services/service';
 import { ServerError } from '../utils/ServerError';
 
@@ -42,6 +42,11 @@ class Controller {
           outgoingData = service.handleAttack(JSON.parse(data));
           break;
         }
+
+        case MessageType.RANDOM_ATTACK: {
+          outgoingData = service.handleRandomAttack(JSON.parse(data));
+          break;
+        }
       }
 
       if (outgoingData) {
@@ -59,9 +64,9 @@ class Controller {
   public handleError(error: Error) {
     if (error instanceof ServerError) {
       this.ws.send(this.generateOutgoingMessage(MessageType.ERROR, { errorText: error.message }));
+    } else {
+      console.log(error);
     }
-
-    console.log(error);
   }
 
   private dispatchMessages(outgoingData: ArrangedMessage[]) {
