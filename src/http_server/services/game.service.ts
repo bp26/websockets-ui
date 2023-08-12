@@ -148,6 +148,12 @@ class GameService {
     return { winPlayer: playerId };
   }
 
+  public getEnemyId(gameId: string, playerId: string) {
+    const game = gameDb.getById(gameId);
+    const enemyPlayer = game?.players.find((player) => player.indexPlayer !== playerId)?.indexPlayer;
+    return enemyPlayer;
+  }
+
   public generateRandomCoordinates() {
     const [min, max] = [FIELD_MIN_COUNT, FIELD_MAX_COUNT];
     const [x, y] = [generateNumber(min, max), generateNumber(min, max)];
