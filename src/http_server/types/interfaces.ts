@@ -30,10 +30,6 @@ export interface PlayerData {
   password: string;
 }
 
-export interface UnregisteredPlayer extends PlayerData {
-  id: string;
-}
-
 export interface RoomData {
   indexRoom: string;
 }
@@ -56,9 +52,17 @@ export interface GameData {
   ships: ShipData[];
 }
 
-export interface AttackData {
-  gameId: string;
+export interface Coordinates {
   x: number;
   y: number;
+}
+
+export interface RandomAttackData {
+  gameId: string;
   indexPlayer: string;
+}
+
+export interface AttackData extends RandomAttackData {
+  x: number;
+  y: number;
 }
