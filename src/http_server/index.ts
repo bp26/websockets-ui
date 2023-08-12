@@ -9,8 +9,7 @@ const server = createServer();
 const wsServer = new WebSocketServer({ server });
 
 wsServer.on('connection', (ws: ExtWebSocket) => {
-  const id = v4();
-  ws.id = id;
+  ws.id = v4();
   const controller = new Controller(wsServer, ws);
 
   ws.on('message', (msg) => {
