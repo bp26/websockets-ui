@@ -1,30 +1,34 @@
-import { Game, gameDb } from '../db/game.db';
-import { AttackData, GameData, Ship } from '../types/interfaces';
+import { Game, gameDb, GamePlayer } from '../db/game.db';
+import { AttackData, Coordinates, GameData, Ship } from '../types/interfaces';
 import { ServerError } from '../utils/ServerError';
-import { ERROR_GAME_NOT_CREATED, ERROR_GAME_NOT_STARTED, ERROR_GAME_PLAYER_NOT_IN_GAME, ERROR_GAME_WRONG_PLAYER } from '../utils/constants';
+import {
+  ERROR_GAME_NOT_CREATED,
+  ERROR_GAME_NOT_STARTED,
+  ERROR_GAME_PLAYER_NOT_IN_GAME,
+  ERROR_GAME_SHIPS_ALREADY_ADDED,
+  ERROR_GAME_WRONG_PLAYER,
+  FIELD_MAX_COUNT,
+  FIELD_MIN_COUNT,
+  UNEXPECTED_ERROR_ENEMY_DOESNT_EXIST,
+  UNEXPECTED_ERROR_GAME_DOESNT_EXIST,
+} from '../utils/constants';
 import { fillArray } from '../utils/fillArray';
 import { AttackResult } from '../types/enums';
+import { generateNumber } from '../utils/generateNumber';
 
 class GameService {
   public createGame(playerId1: string, playerId2: string) {
-    const { id } = gameDb.add(playerId1, playerId2);
-    const data = [
-      {
-        id: playerId1,
+    const { id: gameId } = gameDb.add(playerId1, playerId2);
+    const data = [playerId1, playerId2].map((id) => {
+      return {
+        id: id,
         data: {
-          idGame: id,
-          idPlayer: playerId1,
+          idGame: gameId,
+          idPlayer: id,
         },
-      },
-      {
-        id: playerId2,
-        data: {
-          idGame: id,
-          idPlayer: playerId2,
-        },
-      },
-    ];
-    return { data, id };
+      };
+    });
+    return { data, gameId };
   }
 
   public addShips({ ships }: GameData, playerId: string, gameId: string) {
@@ -41,23 +45,24 @@ class GameService {
       };
     });
 
-    const updatedPlayers = game.players.map((player) => {
-      if (player.indexPlayer === playerId && !player.populated) {
-        return {
-          ...player,
-          populated: true,
-          ships: adaptedShips,
-        };
-      } else {
-        return player;
-      }
+    const gamePlayer = game.players.find((player) => player.indexPlayer === playerId);
+
+    if (!gamePlayer) {
+      throw new ServerError(ERROR_GAME_PLAYER_NOT_IN_GAME);
+    }
+
+    if (gamePlayer.populated) {
+      throw new ServerError(ERROR_GAME_SHIPS_ALREADY_ADDED);
+    }
+
+    const updatedGame = this.updatePlayer(playerId, gameId, {
+      populated: true,
+      ships: adaptedShips,
     });
 
-    const updatedGame = gameDb.update(gameId, { players: updatedPlayers });
-
     return {
-      arePlayersReady: !updatedPlayers.find((item) => !item.populated),
-      playersIds: updatedPlayers.map((player) => player.indexPlayer),
+      arePlayersReady: !updatedGame.players.find((item) => !item.populated),
+      playersIds: updatedGame.players.map((player) => player.indexPlayer),
       gameData: updatedGame,
     };
   }
@@ -106,46 +111,59 @@ class GameService {
       throw new ServerError(ERROR_GAME_WRONG_PLAYER);
     }
 
-    const enemyPlayer = game.players.find((player) => player.indexPlayer !== indexPlayer)!;
+    const enemyPlayer = game.players.find((player) => player.indexPlayer !== indexPlayer);
 
-    const { status, ships } = this.shootShips(x, y, enemyPlayer.ships);
-
-    if (status !== AttackResult.MISS) {
-      const updatedPlayers = game.players.map((player) => {
-        if (player.indexPlayer === enemyPlayer.indexPlayer) {
-          return {
-            ...player,
-            ships,
-          };
-        }
-
-        return player;
-      });
-
-      gameDb.update(gameId, { players: updatedPlayers });
+    if (!enemyPlayer) {
+      throw Error(UNEXPECTED_ERROR_ENEMY_DOESNT_EXIST);
     }
 
+    const { status, ships, killedShipCoordinates } = this.shootShips(x, y, enemyPlayer.ships);
+
+    if (status !== AttackResult.MISS) {
+      this.updatePlayer(enemyPlayer.indexPlayer, gameId, {
+        ships,
+      });
+    }
+
+    const killedShipData = killedShipCoordinates?.map((position) => this.formAttackResponse(position, indexPlayer, status));
+    const shotData = this.formAttackResponse({ x, y }, indexPlayer, status);
+
     const playersIds = game.players.map((player) => player.indexPlayer);
+    const nextPlayer = status === AttackResult.MISS ? playersIds.find((id) => id !== indexPlayer)! : indexPlayer;
+
+    const areShipsEmpty = ships.length === 0;
 
     return {
-      nextPlayer: status === AttackResult.MISS ? playersIds.find((id) => id !== indexPlayer)! : indexPlayer,
+      status,
+      nextPlayer,
       playersIds,
-      data: {
-        position: {
-          x,
-          y,
-        },
-        currentPlayer: indexPlayer,
-        status,
-      },
+      shotData,
+      killedShipData,
+      areShipsEmpty,
+    };
+  }
+
+  public finishGame(gameId: string, playerId: string) {
+    gameDb.remove(gameId);
+    return { winPlayer: playerId };
+  }
+
+  public generateRandomCoordinates() {
+    const [min, max] = [FIELD_MIN_COUNT, FIELD_MAX_COUNT];
+    const [x, y] = [generateNumber(min, max), generateNumber(min, max)];
+
+    return {
+      x,
+      y,
     };
   }
 
   private shootShips(shotX: number, shotY: number, ships: Ship[]) {
-    let status: AttackResult = AttackResult.MISS;
+    let status: AttackResult | undefined;
+    let killedShipCoordinates: { x: number; y: number }[] | undefined;
 
     const shotShips = ships.reduce<Ship[]>((acc, ship) => {
-      const { direction, cull, position } = ship;
+      const { direction, cull, position, length } = ship;
       const [lengthPosition, widthPosition] = direction ? [position.y, position.x] : [position.x, position.y];
       const [lengthShot, widthShot] = direction ? [shotY, shotX] : [shotX, shotY];
       const lengthPositions = cull.map((item) => item + lengthPosition);
@@ -156,32 +174,66 @@ class GameService {
 
       const index = lengthPositions.findIndex((position) => position === lengthShot);
 
-      console.log(cull);
-
       const shotCull = [...cull.slice(0, index), ...cull.slice(index + 1)];
-
-      console.log(shotCull);
 
       if (shotCull.length === 0) {
         status = AttackResult.KILLED;
+
+        killedShipCoordinates = fillArray(length).map((position) => {
+          const [x, y] = direction ? [widthPosition, position + lengthPosition] : [position + lengthPosition, widthPosition];
+          return {
+            x,
+            y,
+          };
+        });
+
         return acc;
+      } else {
+        status = AttackResult.SHOT;
+        return [
+          ...acc,
+          {
+            ...ship,
+            cull: shotCull,
+          },
+        ];
       }
-
-      status = AttackResult.SHOT;
-
-      return [
-        ...acc,
-        {
-          ...ship,
-          cull: shotCull,
-        },
-      ];
     }, []);
 
     return {
-      status,
+      status: status ?? AttackResult.MISS,
       ships: shotShips,
+      killedShipCoordinates,
     };
+  }
+
+  private formAttackResponse(position: Coordinates, currentPlayer: string, status: AttackResult) {
+    return {
+      position,
+      currentPlayer,
+      status,
+    };
+  }
+
+  private updatePlayer(playerId: string, gameId: string, updatedData: Partial<GamePlayer>) {
+    const game = gameDb.getById(gameId);
+
+    if (!game) {
+      throw new Error(UNEXPECTED_ERROR_GAME_DOESNT_EXIST);
+    }
+
+    const updatedPlayers = game.players.map((player) => {
+      if (player.indexPlayer === playerId) {
+        return {
+          ...player,
+          ...updatedData,
+        };
+      }
+
+      return player;
+    });
+
+    return gameDb.update(game.id, { players: updatedPlayers });
   }
 }
 
