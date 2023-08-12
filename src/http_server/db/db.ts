@@ -52,7 +52,7 @@ export class ExtDb<T extends DatabaseItemConstructor<U>, U extends NamedDatabase
     super(itemConstructor);
   }
 
-  public getByName(name: string) {
+  public getByName(name: string): U | undefined {
     return structuredClone(this.items.find((item) => item.name === name));
   }
 }

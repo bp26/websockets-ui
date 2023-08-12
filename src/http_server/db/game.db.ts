@@ -2,7 +2,7 @@ import { DatabaseItem, Db } from './db';
 import { v4 } from 'uuid';
 import { Ship } from '../types/interfaces';
 
-class GamePlayer {
+export class GamePlayer {
   indexPlayer: string;
   populated = false;
   ships: Ship[] = [];
