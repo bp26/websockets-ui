@@ -1,7 +1,7 @@
 import { roomDb } from '../db/room.db';
 import { Player } from '../db/player.db';
 import { ServerError } from '../utils/ServerError';
-import { ERROR_ROOM_DOESNT_EXIST } from '../utils/constants';
+import { ERROR_ROOM_DOESNT_EXIST, ERROR_ROOM_PLAYER_ALREADY_IN_ROOM } from '../utils/constants';
 
 class RoomService {
   public getRooms() {
@@ -11,10 +11,6 @@ class RoomService {
         roomId: room.id,
       };
     });
-  }
-
-  public getRoomById(id: string) {
-    return roomDb.getById(id);
   }
 
   public createRoom(player: Player) {
@@ -31,9 +27,11 @@ class RoomService {
 
     const roomUsers = [...room.roomUsers];
 
-    if (!room.roomUsers.find((user) => user.index === player.id)) {
-      roomUsers.push({ name: player.name, index: player.id });
+    if (room.roomUsers.find((user) => user.index === player.id)) {
+      throw new ServerError(ERROR_ROOM_PLAYER_ALREADY_IN_ROOM);
     }
+
+    roomUsers.push({ name: player.name, index: player.id });
 
     roomDb.update(roomId, {
       roomUsers,
