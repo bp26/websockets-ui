@@ -4,28 +4,26 @@ import { ERROR_PLAYER_ALREADY_ONLINE, ERROR_PLAYER_WRONG_PASSWORD } from '../uti
 
 class PlayerService {
   public register({ name, password }: PlayerData, playerId: string) {
-    const oldPlayer = playerDb.getByName(name);
+    let player = playerDb.getByName(name);
 
-    if (!oldPlayer) {
-      playerDb.add(name, password, playerId);
-    } else if (oldPlayer.password !== password) {
+    if (!player) {
+      player = playerDb.add(name, password, playerId);
+    } else if (player.password !== password) {
       return {
         error: true,
         errorText: ERROR_PLAYER_WRONG_PASSWORD,
       };
-    } else if (oldPlayer.online) {
+    } else if (player.online) {
       return {
         error: true,
         errorText: ERROR_PLAYER_ALREADY_ONLINE,
       };
     } else {
-      playerDb.update(oldPlayer.id, {
+      player = playerDb.update(player.id, {
         id: playerId,
         online: true,
       });
     }
-
-    const player = playerDb.getById(playerId)!;
 
     return {
       ...{ name: player.name, index: player.id },
