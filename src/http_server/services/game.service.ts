@@ -38,13 +38,6 @@ class GameService {
       throw new ServerError(ERROR_GAME_NOT_CREATED);
     }
 
-    const adaptedShips = ships.map((ship) => {
-      return {
-        ...ship,
-        cull: fillArray(ship.length),
-      };
-    });
-
     const gamePlayer = game.players.find((player) => player.indexPlayer === playerId);
 
     if (!gamePlayer) {
@@ -54,6 +47,13 @@ class GameService {
     if (gamePlayer.populated) {
       throw new ServerError(ERROR_GAME_SHIPS_ALREADY_ADDED);
     }
+
+    const adaptedShips = ships.map((ship) => {
+      return {
+        ...ship,
+        cull: fillArray(ship.length),
+      };
+    });
 
     const updatedGame = this.updatePlayer(playerId, gameId, {
       populated: true,
@@ -87,6 +87,7 @@ class GameService {
     gameDb.update(gameId, {
       currentPlayer: playerId,
     });
+
     return { currentPlayer: playerId };
   }
 
