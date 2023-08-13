@@ -13,7 +13,7 @@ class WinnerService {
     } else {
       winnerDb.update(winner.id, {
         ...winner,
-        wins: winner.wins++,
+        wins: winner.wins + 1,
       });
     }
   }
