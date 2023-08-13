@@ -51,6 +51,7 @@ class PlayerService {
       playerDb.update(playerId, {
         online: false,
         gameId: '',
+        roomId: '',
       });
     }
 
