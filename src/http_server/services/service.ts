@@ -135,7 +135,7 @@ class Service {
     }
 
     if (areShipsEmpty) {
-      return this.handleWin(player, playersIds);
+      arrangedMessages.push(...this.handleWin(player, playersIds));
     } else {
       arrangedMessages.push({
         mode: ServerMessageMode.BROADCAST_SELECTIVE,
