@@ -40,6 +40,12 @@ class PlayerService {
     });
   }
 
+  public addRoomIdToPlayer(playerId: string, roomId: string) {
+    playerDb.update(playerId, {
+      roomId,
+    });
+  }
+
   public logoffPlayer(playerId: string) {
     const player = playerDb.getById(playerId);
 
