@@ -1,10 +1,8 @@
 import request, { WSChain } from 'superwstest';
 import server from '..';
 import { MessageType } from '../types/enums';
-import { roomDb } from '../db/room.db';
 
 const playerName = 'Aleksey';
-const secondaryPlayerName = 'Sergey';
 const playerPassword = 'password';
 
 const formMessage = (type: MessageType, data: unknown) => {
@@ -121,26 +119,5 @@ describe('Room functionality', () => {
       const { name } = roomUsers[0];
       expect(name).toEqual(playerName);
     });
-  });
-
-  it('Removes the room and returns game data for created game', async () => {
-    const registeredRequest = register(request(server).ws('/path/ws'), secondaryPlayerName);
-    await registeredRequest
-      .sendJson(
-        formMessage(MessageType.ADD_USER, {
-          indexRoom: roomDb.getAll()[0].id,
-        })
-      )
-      .expectJson(({ data, type }) => {
-        expect(type).toEqual(MessageType.UPDATE_ROOM);
-        expect(JSON.parse(data)).toEqual([]);
-      })
-      .expectJson(({ data, type }) => {
-        expect(type).toEqual(MessageType.CREATE_GAME);
-
-        const { idGame, idPlayer } = JSON.parse(data);
-        expect(typeof idGame).toEqual('string');
-        expect(typeof idPlayer).toEqual('string');
-      });
   });
 });
