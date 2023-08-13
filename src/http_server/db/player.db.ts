@@ -6,6 +6,7 @@ export class Player implements NamedDatabaseItem {
   id: string;
   online: boolean = true;
   gameId: string = '';
+  roomId: string = '';
 
   constructor(name: string, password: string, playerId: string) {
     this.name = name;
