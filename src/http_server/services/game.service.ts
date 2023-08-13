@@ -150,10 +150,9 @@ class GameService {
 
   public getEnemyId(gameId: string, playerId: string) {
     const game = gameDb.getById(gameId);
-    if (!game) {
-      throw new Error(UNEXPECTED_ERROR_GAME_DOESNT_EXIST);
+    if (game) {
+      return game.players.find((player) => player.indexPlayer !== playerId)?.indexPlayer;
     }
-    return game.players.find((player) => player.indexPlayer === playerId)?.indexPlayer;
   }
 
   public generateRandomCoordinates() {
