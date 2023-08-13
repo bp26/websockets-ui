@@ -30,7 +30,9 @@ class Service {
       throw new ServerError(ERROR_PLAYER_NOT_LOGGED_IN);
     }
 
-    roomService.createRoom(player);
+    const { roomId } = roomService.createRoom(player);
+
+    playerService.addRoomIdToPlayer(playerId, roomId);
 
     return [
       {
@@ -60,7 +62,10 @@ class Service {
 
     if (isRoomFull) {
       const { data, gameId } = gameService.createGame(playersIds[0], playersIds[1]);
+
+      playerService.addRoomIdToPlayer(playersIds[0], '');
       playersIds.forEach((id) => playerService.addGameIdToPlayer(id, gameId));
+
       arrangedMessages.push({
         mode: ServerMessageMode.BROADCAST_SELECTIVE_CYCLE_DATA,
         data,
@@ -164,6 +169,15 @@ class Service {
       if (enemyId) {
         const enemyPlayer = playerService.getPlayerById(enemyId)!;
         arrangedMessages.push(...this.handleWin(enemyPlayer, [enemyId]));
+      }
+
+      if (player.roomId) {
+        roomService.removeRoom(player.roomId);
+        arrangedMessages.push({
+          mode: ServerMessageMode.BROADCAST,
+          data: roomService.getRooms(),
+          type: MessageType.UPDATE_ROOM,
+        });
       }
     }
 
