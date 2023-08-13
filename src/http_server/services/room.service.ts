@@ -16,6 +16,11 @@ class RoomService {
   public createRoom(player: Player) {
     const { id } = roomDb.add();
     this.addPlayerToRoom(id, player);
+    return { roomId: id };
+  }
+
+  public removeRoom(id: string) {
+    roomDb.remove(id);
   }
 
   public addPlayerToRoom(roomId: string, player: Player) {
@@ -40,7 +45,7 @@ class RoomService {
     const isRoomFull = roomUsers.length > 1;
 
     if (isRoomFull) {
-      roomDb.remove(roomId);
+      this.removeRoom(roomId);
     }
 
     return {
